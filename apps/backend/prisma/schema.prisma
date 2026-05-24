@@ -1,0 +1,47 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum AttendanceType {
+  CHECK_IN
+  CHECK_OUT
+}
+
+model User {
+  id        String   @id @default(uuid())
+  dni       String   @unique
+  email     String?  @unique
+  password  String?
+  firstName String
+  lastName  String
+  role      Role     @default(EMPLOYEE)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  attendances Attendance[]
+
+  @@index([dni])
+}
+
+model Attendance {
+  id        String         @id @default(uuid())
+  userId    String
+  type      AttendanceType
+  timestamp DateTime       @default(now())
+  device    String?
+  ipAddress String?
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([timestamp])
+}
