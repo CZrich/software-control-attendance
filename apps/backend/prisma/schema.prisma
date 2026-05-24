@@ -8,7 +8,9 @@ generator client {
 }
 
 enum Role {
+  SUPER_ADMIN
   ADMIN
+  HR
   EMPLOYEE
 }
 
@@ -28,9 +30,45 @@ model User {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  attendances Attendance[]
+  
+  scheduleId String?
+  schedule   Schedule? @relation(fields: [scheduleId], references: [id])
+
+  attendances       Attendance[]
+  attendanceRecords AttendanceRecord[]
 
   @@index([dni])
+}
+
+model Schedule {
+  id               String   @id @default(uuid())
+  name             String
+  checkInTime      String   // e.g. '08:00'
+  checkOutTime     String   // e.g. '17:00'
+  toleranceMinutes Int      @default(0)
+  createdAt        DateTime @default(now())
+  users            User[]
+}
+
+model AttendanceRecord {
+  id                  String    @id @default(uuid())
+  userId              String
+  date                String    // e.g. '2023-10-25'
+  checkIn             DateTime
+  checkOut            DateTime?
+  isLate              Boolean   @default(false)
+  minutesLate         Int       @default(0)
+  workedHours         Float?
+  justifiedAbsence    Boolean   @default(false)
+  justificationReason String?
+  correctedBy         String?
+  correctionReason    String?
+  createdAt           DateTime  @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
 }
 
 model Attendance {

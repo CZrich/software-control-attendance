@@ -1,11 +1,39 @@
+export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'HR' | 'EMPLOYEE';
+
+export interface Schedule {
+  id: string;
+  name: string;
+  checkInTime: string;
+  checkOutTime: string;
+  toleranceMinutes: number;
+}
+
 export interface User {
   id: string;
   dni: string;
   email: string | null;
   firstName: string;
   lastName: string;
-  role: 'ADMIN' | 'EMPLOYEE';
+  role: Role;
   isActive: boolean;
+  scheduleId: string | null;
+  schedule?: Schedule | null;
+  createdAt: string;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  userId: string;
+  date: string;
+  checkIn: string;
+  checkOut: string | null;
+  isLate: boolean;
+  minutesLate: number;
+  workedHours: number | null;
+  justifiedAbsence: boolean;
+  justificationReason: string | null;
+  correctedBy: string | null;
+  correctionReason: string | null;
   createdAt: string;
 }
 

@@ -10,10 +10,13 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
     "axios": "^1.6.7",
     "lucide-react": "^0.359.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.76.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/react": "^18.2.64",

@@ -132,7 +132,7 @@ export const Kiosk: React.FC<KioskProps> = ({ onNavigate }) => {
           ) : (
             <XCircle size={120} className="mb-6 animate-shake" />
           )}
-          <p className="text-4xl font-black whitespace-pre-line leading-relaxed">
+          <p className="text-3xl md:text-4xl font-black whitespace-pre-line leading-relaxed px-4">
             {feedback.message}
           </p>
         </div>

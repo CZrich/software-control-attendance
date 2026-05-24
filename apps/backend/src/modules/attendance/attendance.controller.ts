@@ -37,3 +37,18 @@ export const getHistory = async (
     next(err);
   }
 };
+
+export const updateRecord = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id } = req.params;
+    const adminId = req.user!.id;
+    const result = await attendanceService.updateRecord(id, req.body, adminId);
+    res.status(200).json({ status: 'success', data: result });
+  } catch (err) {
+    next(err);
+  }
+};

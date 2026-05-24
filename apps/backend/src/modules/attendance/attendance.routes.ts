@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { authMiddleware, adminMiddleware } from '../../middlewares/auth.middleware';
+import { authMiddleware, roleGuard } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
-import { registerAttendanceSchema } from './attendance.schema';
-import { registerAttendance, getHistory } from './attendance.controller';
+import { registerAttendanceSchema, updateRecordSchema } from './attendance.schema';
+import { registerAttendance, getHistory, updateRecord } from './attendance.controller';
 
 const attendanceRouter = Router();
 
@@ -20,6 +20,14 @@ attendanceRouter.post(
   registerAttendance,
 );
 
-attendanceRouter.get('/history', authMiddleware, adminMiddleware, getHistory);
+attendanceRouter.get('/history', authMiddleware, roleGuard(['SUPER_ADMIN', 'ADMIN', 'HR']), getHistory);
+
+attendanceRouter.put(
+  '/records/:id',
+  authMiddleware,
+  roleGuard(['SUPER_ADMIN', 'ADMIN', 'HR']),
+  validate(updateRecordSchema),
+  updateRecord,
+);
 
 export default attendanceRouter;

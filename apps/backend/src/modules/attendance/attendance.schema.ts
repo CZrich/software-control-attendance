@@ -9,3 +9,11 @@ export const historyQuerySchema = z.object({
   endDate: z.string().optional(),
   search: z.string().optional(),
 });
+
+export const updateRecordSchema = z.object({
+  checkIn: z.string().optional(),
+  checkOut: z.string().optional(),
+  justifiedAbsence: z.boolean().optional(),
+  justificationReason: z.string().optional(),
+  correctionReason: z.string().optional(),
+});

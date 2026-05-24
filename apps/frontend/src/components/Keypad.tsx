@@ -9,7 +9,7 @@ interface KeypadProps {
 
 export const Keypad: React.FC<KeypadProps> = ({ value, onChange, onSubmit }) => {
   const handlePress = (char: string) => {
-    if (value.length < 12) {
+    if (value.length < 8) {
       onChange(value + char);
       if (navigator.vibrate) navigator.vibrate(50);
     }
@@ -49,8 +49,8 @@ export const Keypad: React.FC<KeypadProps> = ({ value, onChange, onSubmit }) => 
       <button
         type="button"
         onClick={onSubmit}
-        disabled={value.length === 0}
-        className="h-16 w-full flex items-center justify-center bg-emerald-600 disabled:opacity-50 text-white hover:bg-emerald-500 active:scale-95 transition rounded-2xl shadow-lg font-bold"
+        disabled={value.length !== 8}
+        className="h-16 w-full flex items-center justify-center bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white hover:bg-emerald-500 active:scale-95 transition rounded-2xl shadow-lg font-bold"
       >
         <Check size={28} />
       </button>

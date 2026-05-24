@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authMiddleware, adminMiddleware } from '../../middlewares/auth.middleware';
+import { authMiddleware, roleGuard } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 import { createUserSchema, updateUserSchema } from './users.schema';
 import {
@@ -12,7 +12,7 @@ import {
 
 const usersRouter = Router();
 
-usersRouter.use(authMiddleware, adminMiddleware);
+usersRouter.use(authMiddleware, roleGuard(['SUPER_ADMIN', 'ADMIN', 'HR']));
 
 usersRouter.get('/', getAllUsers);
 usersRouter.get('/:id', getUserById);

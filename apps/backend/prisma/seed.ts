@@ -4,29 +4,46 @@ import * as bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminEmail = 'admin@attendance.com';
-  const adminDni = '12345678';
+  const superAdminEmail = 'superadmin@attendance.com';
+  const superAdminDni = '00000000';
 
-  const existingAdmin = await prisma.user.findFirst({
-    where: { OR: [{ email: adminEmail }, { dni: adminDni }] },
+  // Create default schedule
+  let defaultSchedule = await prisma.schedule.findFirst({
+    where: { name: 'Turno Mañana' }
   });
 
-  if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+  if (!defaultSchedule) {
+    defaultSchedule = await prisma.schedule.create({
+      data: {
+        name: 'Turno Mañana',
+        checkInTime: '08:00',
+        checkOutTime: '17:00',
+        toleranceMinutes: 10,
+      }
+    });
+    console.log('Turno por defecto creado.');
+  }
+
+  const existingSuperAdmin = await prisma.user.findFirst({
+    where: { OR: [{ email: superAdminEmail }, { dni: superAdminDni }] },
+  });
+
+  if (!existingSuperAdmin) {
+    const hashedPassword = await bcrypt.hash('superadmin123', 10);
     await prisma.user.create({
       data: {
-        dni: adminDni,
-        email: adminEmail,
+        dni: superAdminDni,
+        email: superAdminEmail,
         password: hashedPassword,
-        firstName: 'Administrador',
-        lastName: 'Sistema',
-        role: Role.ADMIN,
+        firstName: 'Super',
+        lastName: 'Admin',
+        role: Role.SUPER_ADMIN,
         isActive: true,
       },
     });
-    console.log('Admin creado: admin@attendance.com / admin123');
+    console.log('Super Admin creado: superadmin@attendance.com / superadmin123');
   } else {
-    console.log('Admin ya existe, saltando seed.');
+    console.log('Super Admin ya existe, saltando seed de superadmin.');
   }
 }
 

@@ -34,13 +34,11 @@ export const authMiddleware = (
   }
 };
 
-export const adminMiddleware = (
-  req: AuthRequest,
-  _res: Response,
-  next: NextFunction,
-) => {
-  if (!req.user || req.user.role !== 'ADMIN') {
-    throw new AppError('Permiso denegado. Se requiere rol Administrador.', 403);
-  }
-  next();
+export const roleGuard = (allowedRoles: string[]) => {
+  return (req: AuthRequest, _res: Response, next: NextFunction) => {
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      throw new AppError('Permiso denegado. No tienes el rol necesario.', 403);
+    }
+    next();
+  };
 };

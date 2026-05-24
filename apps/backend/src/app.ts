@@ -4,6 +4,7 @@ import { errorHandler } from './errors';
 import authRouter from './modules/auth/auth.routes';
 import usersRouter from './modules/users/users.routes';
 import attendanceRouter from './modules/attendance/attendance.routes';
+import schedulesRouter from './modules/schedules/schedules.routes';
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/attendance', attendanceRouter);
+app.use('/api/schedules', schedulesRouter);
 
 app.use(errorHandler);
 
