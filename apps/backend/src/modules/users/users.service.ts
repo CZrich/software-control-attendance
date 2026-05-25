@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { Role } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { AppError } from '../../errors';
 
@@ -51,7 +52,7 @@ export class UsersService {
     password?: string | null;
     firstName: string;
     lastName: string;
-    role: 'ADMIN' | 'EMPLOYEE';
+    role: Role;
     isActive: boolean;
     scheduleId?: string | null;
   }) {
@@ -100,7 +101,7 @@ export class UsersService {
       password?: string | null;
       firstName?: string;
       lastName?: string;
-      role?: 'ADMIN' | 'EMPLOYEE';
+      role?: Role;
       isActive?: boolean;
       scheduleId?: string | null;
     },

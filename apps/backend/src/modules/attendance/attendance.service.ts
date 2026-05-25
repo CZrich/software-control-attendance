@@ -14,22 +14,82 @@ export class AttendanceService {
     if (!user.isActive) throw new AppError('Usuario inactivo. Contacte al administrador.', 400);
 
     const now = new Date();
-    // Helper to get YYYY-MM-DD
     const dateStr = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().split('T')[0];
 
-    const record = await prisma.attendanceRecord.findUnique({
+    // Look for an open record (checked in but not checked out) within the last 16 hours
+    // This handles night shifts that cross midnight
+    const maxLookbackHours = 16;
+    const lookback = new Date(now.getTime() - maxLookbackHours * 60 * 60 * 1000);
+
+    const openRecord = await prisma.attendanceRecord.findFirst({
       where: {
-        userId_date: {
-          userId: user.id,
-          date: dateStr,
-        }
-      }
+        userId: user.id,
+        checkOut: null,
+        checkIn: { gte: lookback },
+      },
+      orderBy: { checkIn: 'desc' },
     });
 
     let nextType: AttendanceType;
 
-    if (!record) {
-      // First mark -> CHECK_IN
+    if (openRecord) {
+      // Open record found → CHECK_OUT
+      nextType = AttendanceType.CHECK_OUT;
+
+      const diffMs = now.getTime() - new Date(openRecord.checkIn).getTime();
+      const diffMinutes = diffMs / (1000 * 60);
+
+      let errorMessage = 'Detectamos una posible marcación errónea.';
+      let isEarlyCheckout = false;
+
+      if (diffMinutes < 30) {
+        isEarlyCheckout = true;
+      }
+
+      if (user.schedule) {
+        const [schOutHour, schOutMin] = user.schedule.checkOutTime.split(':').map(Number);
+        const schOutTimeInMinutes = schOutHour * 60 + schOutMin;
+        const actualTimeInMinutes = now.getHours() * 60 + now.getMinutes();
+
+        if (actualTimeInMinutes < schOutTimeInMinutes) {
+          isEarlyCheckout = true;
+          errorMessage = `Su hora de salida es a las ${user.schedule.checkOutTime}.`;
+        }
+      }
+
+      if (isEarlyCheckout) {
+        throw new AppError(
+          `${errorMessage} Acérquese a RR.HH o al administrador para justificar su salida.`,
+          400
+        );
+      }
+
+      const workedHours = diffMinutes / 60;
+
+      await prisma.attendanceRecord.update({
+        where: { id: openRecord.id },
+        data: {
+          checkOut: now,
+          workedHours,
+        }
+      });
+
+    } else {
+      // No open record → CHECK_IN
+      // But first prevent creating a duplicate if today already has a completed record
+      const todayRecord = await prisma.attendanceRecord.findUnique({
+        where: {
+          userId_date: {
+            userId: user.id,
+            date: dateStr,
+          }
+        }
+      });
+
+      if (todayRecord?.checkOut) {
+        throw new AppError('Ya completó su marcación por el día de hoy.', 400);
+      }
+
       nextType = AttendanceType.CHECK_IN;
       let isLate = false;
       let minutesLate = 0;
@@ -65,53 +125,6 @@ export class AttendanceService {
           minutesLate,
         }
       });
-
-    } else if (!record.checkOut) {
-      // Second mark -> CHECK_OUT
-      nextType = AttendanceType.CHECK_OUT;
-      
-      const diffMs = now.getTime() - new Date(record.checkIn).getTime();
-      const diffMinutes = diffMs / (1000 * 60);
-      
-      let errorMessage = 'Detectamos una posible marcación errónea.';
-      let isEarlyCheckout = false;
-
-      // 1. Prevent checkout if less than 30 mins have passed
-      if (diffMinutes < 30) {
-        isEarlyCheckout = true;
-      }
-
-      // 2. Prevent checkout if it's before the scheduled checkout time
-      if (user.schedule) {
-        const [schOutHour, schOutMin] = user.schedule.checkOutTime.split(':').map(Number);
-        const schOutTimeInMinutes = schOutHour * 60 + schOutMin;
-        const actualTimeInMinutes = now.getHours() * 60 + now.getMinutes();
-
-        if (actualTimeInMinutes < schOutTimeInMinutes) {
-          isEarlyCheckout = true;
-          errorMessage = `Su hora de salida es a las ${user.schedule.checkOutTime}.`;
-        }
-      }
-
-      if (isEarlyCheckout) {
-        throw new AppError(
-          `${errorMessage} Acérquese a RR.HH o al administrador para justificar su salida.`,
-          400
-        );
-      }
-
-      const workedHours = diffMinutes / 60;
-
-      await prisma.attendanceRecord.update({
-        where: { id: record.id },
-        data: {
-          checkOut: now,
-          workedHours,
-        }
-      });
-    } else {
-      // Third mark or more -> Error
-      throw new AppError('Ya completó su marcación por el día de hoy.', 400);
     }
 
     // Always create the raw event

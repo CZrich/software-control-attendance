@@ -1,64 +1,71 @@
 # Attendance Control System
 
-Sistema de control de asistencia desarrollado con:
+Sistema de control de asistencia con kiosko táctil, panel administrativo y gestión de turnos.
 
-* React + TypeScript
-* Express + TypeScript
-* PostgreSQL
-* Prisma ORM
-* Docker
-* PNPM Workspace Monorepo
+## Stack
 
----
+### Frontend
+- React 18 + TypeScript
+- Vite
+- TailwindCSS
+- React Router DOM v7
+- React Hook Form + Zod
+- Axios
+- Lucide React (iconos)
 
-# Stack
+### Backend
+- Express + TypeScript
+- Prisma ORM
+- JWT Authentication
+- Zod Validation
+- Rate Limiting
 
-## Frontend
-
-* React
-* TypeScript
-* Vite
-* TailwindCSS
-
-## Backend
-
-* Express
-* Prisma ORM
-* JWT Authentication
-* Zod Validation
-
-## Database
-
-* PostgreSQL 17
+### Database
+- PostgreSQL 17 (Docker)
 
 ---
 
-# Project Structure
+## Project Structure
 
-```bash
+```
 .
 ├── apps
 │   ├── backend
+│   │   ├── prisma/          # Schema, migrations, seed
+│   │   ├── src/
+│   │   │   ├── config/      # App configuration
+│   │   │   ├── errors/      # Error handler
+│   │   │   ├── middlewares/  # Auth + validation
+│   │   │   ├── modules/
+│   │   │   │   ├── attendance/  # Register & history
+│   │   │   │   ├── auth/        # Login
+│   │   │   │   ├── schedules/   # Shift management
+│   │   │   │   └── users/       # CRUD users
+│   │   │   ├── app.ts
+│   │   │   └── server.ts
+│   │   └── package.json
 │   └── frontend
+│       ├── src/
+│       │   ├── components/  # Keypad, TableSkeleton
+│       │   ├── context/     # AuthContext
+│       │   ├── pages/       # Kiosk, Login, Admin
+│       │   ├── services/    # Axios API client
+│       │   ├── types/       # TypeScript interfaces
+│       │   ├── App.tsx
+│       │   └── main.tsx
+│       └── package.json
 ├── docker-compose.yml
-├── package.json
-├── pnpm-workspace.yaml
+├── package.json             # Root scripts
+└── pnpm-workspace.yaml
 ```
 
 ---
 
-# Requirements
+## Requirements
 
-Install:
-
-* Node.js >= 20
-* PNPM
-* Docker
-* Docker Compose
-
----
-
-# Install PNPM
+- Node.js >= 20
+- PNPM
+- Docker & Docker Compose
 
 ```bash
 npm install -g pnpm
@@ -66,343 +73,187 @@ npm install -g pnpm
 
 ---
 
-# Clone Project
+## Quick Start
+
+### 1. Clone & Install
 
 ```bash
 git clone <YOUR_REPOSITORY_URL>
-
 cd softwareControlAttendance
-```
-
----
-
-# Install Dependencies
-
-From project root:
-
-```bash
 pnpm install
 ```
 
----
-
-# Docker PostgreSQL Setup
-
-## Start PostgreSQL Container
-
-From project root:
+### 2. Start PostgreSQL
 
 ```bash
-docker compose up -d
+pnpm db:up
+# or: docker compose up -d
 ```
 
-## Verify Container
+### 3. Configure Backend Environment
 
-```bash
-docker ps
-```
-
-Expected container:
-
-```bash
-attendance_postgres
-```
-
----
-
-# Backend Environment Variables
-
-Create file:
-
-```bash
-apps/backend/.env
-```
-
-Add:
+Create `apps/backend/.env`:
 
 ```env
-PORT=4000
-
+PORT=3000
 DATABASE_URL="postgresql://postgres:postgres_secure_password_123@localhost:5432/attendance_db"
-
 JWT_SECRET="super_secret_jwt_key"
-
 NODE_ENV=development
 ```
 
----
-
-# Prisma Setup
-
-Go to backend:
+### 4. Setup Database
 
 ```bash
 cd apps/backend
-```
-
-## Generate Prisma Client
-
-```bash
 pnpm prisma generate
-```
-
-## Run Database Migrations
-
-```bash
 pnpm prisma migrate dev --name init
-```
-
-## Seed Database
-
-```bash
 pnpm prisma:seed
 ```
 
----
-
-# Run Backend
-
-From:
+### 5. Run Backend
 
 ```bash
-apps/backend
-```
-
-Run:
-
-```bash
+# Terminal 1
+cd apps/backend
 pnpm dev
+# Runs on http://localhost:3000
 ```
 
-Backend runs on:
+### 6. Run Frontend
 
 ```bash
-http://localhost:4000
-```
-
----
-
-# Run Frontend
-
-Open another terminal.
-
-Go to frontend:
-
-```bash
+# Terminal 2
 cd apps/frontend
-```
-
-Run:
-
-```bash
 pnpm dev
+# Runs on http://localhost:5173
 ```
 
-Frontend runs on:
+Or use root-level shortcuts:
 
 ```bash
-http://localhost:5173
+pnpm dev:backend   # starts backend only
+pnpm dev:frontend  # starts frontend only
+pnpm dev           # starts both in parallel
 ```
 
 ---
 
-# Recommended Backend Script
+## Default Credentials
 
-Install tsx:
+After seeding, a **Super Admin** is created:
 
-```bash
-cd apps/backend
-
-pnpm add -D tsx
-```
-
-Update backend `package.json`:
-
-```json
-"scripts": {
-  "dev": "tsx watch src/server.ts",
-  "build": "tsc",
-  "start": "node dist/server.js",
-  "prisma:generate": "prisma generate",
-  "prisma:migrate": "prisma migrate dev",
-  "prisma:seed": "prisma db seed"
-}
-```
+| Email                        | Password        |
+|------------------------------|-----------------|
+| superadmin@attendance.com    | superadmin123   |
 
 ---
 
-# Docker Compose
+## Features
 
-```yml
-services:
-  postgres:
-    image: postgres:17-alpine
-    container_name: attendance_postgres
-    restart: unless-stopped
+### Kiosko (Front page)
+- Real-time clock display
+- Numeric keypad for DNI input
+- Automatic CHECK_IN / CHECK_OUT detection (15s cooldown)
+- Fullscreen toggle
+- Visual success/error feedback
 
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres_secure_password_123
-      POSTGRES_DB: attendance_db
+### Admin Panel (`/login` → `/admin`)
+- **Historial Diario** — Search attendance records by name/DNI/date range
+- **Directorio** — CRUD users (name, DNI, email, role, schedule, active status)
+- **Turnos & Horarios** — CRUD work shifts with configurable tolerance & entry windows
+- **Justification** — Mark absences as justified, force check-out times
+- Role-based access control (SUPER_ADMIN, ADMIN, HR, EMPLOYEE)
 
-    ports:
-      - "5432:5432"
-
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  postgres_data:
-```
+### Roles & Permissions
+| Role          | Can Manage             |
+|---------------|------------------------|
+| SUPER_ADMIN   | Everything             |
+| ADMIN         | HR + EMPLOYEE          |
+| HR            | EMPLOYEE               |
+| EMPLOYEE      | None (read-only)       |
 
 ---
 
-# Development Workflow
+## API Endpoints
 
-## Terminal 1
+| Method | Endpoint                    | Auth | Description              |
+|--------|-----------------------------|------|--------------------------|
+| GET    | `/api/health`               | No   | Health check             |
+| POST   | `/api/auth/login`           | No   | Login                    |
+| POST   | `/api/attendance/register`  | No   | Register by DNI          |
+| GET    | `/api/attendance/history`   | Yes  | Attendance records       |
+| PUT    | `/api/attendance/records/:id`| Yes  | Justify record           |
+| GET    | `/api/users`                | Yes  | List users               |
+| POST   | `/api/users`                | Yes  | Create user              |
+| PUT    | `/api/users/:id`            | Yes  | Update user              |
+| DELETE | `/api/users/:id`            | Yes  | Delete user              |
+| GET    | `/api/schedules`            | Yes  | List schedules           |
+| POST   | `/api/schedules`            | Yes  | Create schedule          |
+| PUT    | `/api/schedules/:id`        | Yes  | Update schedule          |
+| DELETE | `/api/schedules/:id`        | Yes  | Delete schedule          |
 
-Run PostgreSQL:
+---
+
+## Development
 
 ```bash
+# Start database
 docker compose up -d
-```
 
----
+# Generate Prisma client after schema changes
+cd apps/backend && pnpm prisma generate
 
-## Terminal 2
+# Run migrations
+pnpm prisma migrate dev --name <description>
 
-Run backend:
-
-```bash
-cd apps/backend
-
-pnpm prisma generate
-
-pnpm prisma migrate dev --name init
-
+# Seed database
 pnpm prisma:seed
 
+# Run both apps
 pnpm dev
 ```
 
 ---
 
-## Terminal 3
-
-Run frontend:
+## Build for Production
 
 ```bash
-cd apps/frontend
+# Backend
+cd apps/backend && pnpm build
 
-pnpm dev
+# Frontend
+cd apps/frontend && pnpm build
 ```
 
 ---
 
-# Build Production
-
-## Backend
+## Docker Commands
 
 ```bash
-cd apps/backend
-
-pnpm build
-```
-
-## Frontend
-
-```bash
-cd apps/frontend
-
-pnpm build
+pnpm db:up      # Start PostgreSQL
+pnpm db:down    # Stop containers
+docker compose down -v   # Stop and delete data (reset)
 ```
 
 ---
 
-# Stop Containers
+## Tech Notes
 
-```bash
-docker compose down
-```
-
----
-
-# Reset Database
-
-WARNING: deletes all data.
-
-```bash
-docker compose down -v
-```
-
-Then:
-
-```bash
-docker compose up -d
-```
+- Backend port: **3000** (configurable via `PORT` env)
+- Attendance cooldown: **15 seconds** between registrations per user
+- Entry window: configurable per schedule (before/after check-in time)
+- Late detection: based on schedule tolerance minutes
+- Frontend calls backend at `http://localhost:3000/api`
 
 ---
 
-# Recommended Git Ignore
+## Future Improvements
 
-Create `.gitignore` in project root:
-
-```gitignore
-node_modules
-dist
-.env
-.prisma
-```
-
----
-
-# Features
-
-* Attendance registration by DNI
-* Numeric keypad UI
-* JWT authentication
-* Admin dashboard
-* User activation/deactivation
-* PostgreSQL database
-* Prisma ORM
-* Dockerized database
-* Responsive kiosk UI
-
----
-
-# Future Improvements
-
-* QR attendance
-* Facial recognition
-* Fingerprint support
-* Excel export
-* Reports dashboard
-* Shift management
-* Geolocation
-* PWA support
-
----
-
-# Recommended Deploy
-
-## Frontend
-
-* Vercel
-
-## Backend
-
-* Railway
-* Render
-
-## Database
-
-* Railway PostgreSQL
-* VPS Docker PostgreSQL
-
----
+- QR attendance
+- Facial recognition
+- Fingerprint support
+- Excel export
+- Reports dashboard
+- Shift management
+- Geolocation
+- PWA support

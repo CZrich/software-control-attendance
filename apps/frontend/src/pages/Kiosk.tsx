@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Keypad } from '../components/Keypad';
 import { Clock, Maximize2, Minimize2, CheckCircle, XCircle } from 'lucide-react';
 
-interface KioskProps {
-  onNavigate: (page: 'kiosk' | 'login' | 'admin') => void;
-}
-
-export const Kiosk: React.FC<KioskProps> = ({ onNavigate }) => {
+export const Kiosk: React.FC = () => {
+  const navigate = useNavigate();
   const [dni, setDni] = useState('');
   const [time, setTime] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -69,6 +67,12 @@ export const Kiosk: React.FC<KioskProps> = ({ onNavigate }) => {
       day: 'numeric',
     });
   };
+/*<button
+          onClick={() => navigate('/login')}
+          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 rounded-xl text-slate-400 text-sm transition"
+        >
+          Admin
+        </button>*/
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between p-6 select-none relative overflow-hidden">
@@ -80,12 +84,7 @@ export const Kiosk: React.FC<KioskProps> = ({ onNavigate }) => {
           {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
         </button>
 
-        <button
-          onClick={() => onNavigate('login')}
-          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 rounded-xl text-slate-400 text-sm transition"
-        >
-          Admin
-        </button>
+  
       </div>
 
       <div className="text-center mt-10">
