@@ -294,8 +294,8 @@ export const AdminDashboard: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between gap-4">
               <div className="flex flex-col md:flex-row gap-3 flex-1">
                 <div className="relative flex-1"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" /><input type="text" placeholder="Buscar por nombre o DNI..." value={search} onChange={e => setSearch(e.target.value)} className="w-full bg-slate-900/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:border-emerald-500 outline-none transition text-sm" /></div>
-                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:border-emerald-500 outline-none transition text-sm" />
-                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:border-emerald-500 outline-none transition text-sm" />
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-slate-700 border border-slate-900 rounded-xl px-4 py-2.5 text-white focus:border-emerald-500 outline-none transition text-sm" />
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-slate-700 border border-slate-900 rounded-xl px-4 py-2.5 text-white focus:border-emerald-500 outline-none transition text-sm" />
               </div>
             </div>
             {isLoadingHistory ? (
@@ -537,12 +537,12 @@ export const AdminDashboard: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-slate-300 mb-1">Entrada (HH:MM)</label>
-                  <input type="time" {...scheduleForm.register('checkInTime')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${scheduleForm.formState.errors.checkInTime ? 'border-rose-500' : 'border-slate-800'}`} />
+                  <input type="time" {...scheduleForm.register('checkInTime')} className={`w-full bg-slate-700 border rounded-xl px-4 py-2 text-white outline-none transition ${scheduleForm.formState.errors.checkInTime ? 'border-rose-500' : 'border-slate-850'}`} />
                   {scheduleForm.formState.errors.checkInTime && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(scheduleForm.formState.errors.checkInTime.message)}</p>}
                 </div>
                 <div>
                   <label className="block text-sm text-slate-300 mb-1">Salida (HH:MM)</label>
-                  <input type="time" {...scheduleForm.register('checkOutTime')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${scheduleForm.formState.errors.checkOutTime ? 'border-rose-500' : 'border-slate-800'}`} />
+                  <input type="time" {...scheduleForm.register('checkOutTime')} className={`w-full bg-slate-700 border rounded-xl px-4 py-2 text-white outline-none transition ${scheduleForm.formState.errors.checkOutTime ? 'border-rose-500' : 'border-slate-850'}`} />
                   {scheduleForm.formState.errors.checkOutTime && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(scheduleForm.formState.errors.checkOutTime.message)}</p>}
                 </div>
               </div>
