@@ -27,6 +27,8 @@ const scheduleSchema = z.object({
   checkInTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato HH:MM requerido'),
   checkOutTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato HH:MM requerido'),
   toleranceMinutes: z.coerce.number().int().min(0, 'Mínimo 0'),
+  entryWindowBeforeMinutes: z.coerce.number().int().min(0, 'Mínimo 0'),
+  entryWindowAfterMinutes: z.coerce.number().int().min(0, 'Mínimo 0'),
 });
 
 const justifySchema = z.object({
@@ -72,7 +74,7 @@ export const AdminDashboard: React.FC<AdminProps> = ({ onNavigate }) => {
   const [editingRecord, setEditingRecord] = useState<any | null>(null);
 
   const userForm = useForm<any>({ resolver: zodResolver(userSchema), defaultValues: { role: 'EMPLOYEE', isActive: true } });
-  const scheduleForm = useForm<any>({ resolver: zodResolver(scheduleSchema), defaultValues: { toleranceMinutes: 15 } });
+  const scheduleForm = useForm<any>({ resolver: zodResolver(scheduleSchema), defaultValues: { toleranceMinutes: 15, entryWindowBeforeMinutes: 60, entryWindowAfterMinutes: 120 } });
   const justifyForm = useForm<any>({ resolver: zodResolver(justifySchema), defaultValues: { justifiedAbsence: true } });
 
   const fetchHistory = useCallback(async () => {
@@ -159,7 +161,7 @@ export const AdminDashboard: React.FC<AdminProps> = ({ onNavigate }) => {
       scheduleForm.reset(sch);
     } else {
       setEditingSchedule(null);
-      scheduleForm.reset({ name: '', checkInTime: '08:00', checkOutTime: '17:00', toleranceMinutes: 15 });
+      scheduleForm.reset({ name: '', checkInTime: '08:00', checkOutTime: '17:00', toleranceMinutes: 15, entryWindowBeforeMinutes: 60, entryWindowAfterMinutes: 120 });
     }
     setShowScheduleModal(true);
   };
@@ -323,18 +325,36 @@ export const AdminDashboard: React.FC<AdminProps> = ({ onNavigate }) => {
                       <th className="px-6 py-4 font-semibold text-xs uppercase">DNI</th>
                       <th className="px-6 py-4 font-semibold text-xs uppercase">Empleado</th>
                       <th className="px-6 py-4 font-semibold text-xs uppercase">Rol</th>
+                      <th className="px-6 py-4 font-semibold text-xs uppercase">Turno</th>
                       <th className="px-6 py-4 font-semibold text-xs uppercase">Estado</th>
                       <th className="px-6 py-4 font-semibold text-xs uppercase text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">
-                    {isLoadingUsers ? <tr><td colSpan={5} className="px-6 py-12 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div></td></tr> : filteredUsers.length === 0 ? <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">Sin usuarios</td></tr> : filteredUsers.map((user) => {
+                    {isLoadingUsers ? <tr><td colSpan={6} className="px-6 py-12 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div></td></tr> : filteredUsers.length === 0 ? <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-500">Sin usuarios</td></tr> : filteredUsers.map((user) => {
                       const isEditable = user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN';
                       return (
                         <tr key={user.id} className="hover:bg-slate-800/30 transition group">
                           <td className="px-6 py-4 font-mono text-slate-300">{user.dni}</td>
                           <td className="px-6 py-4 font-medium text-white">{user.firstName} {user.lastName}<div className="text-xs text-slate-500 font-normal">{user.email}</div></td>
                           <td className="px-6 py-4"><span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-800 text-slate-300">{user.role}</span></td>
+                          <td className="px-6 py-4">
+                            {user.schedule ? (
+                              <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 ${
+                                user.schedule.name.toLowerCase().includes('mañana') || user.schedule.name.toLowerCase().includes('manana')
+                                  ? 'bg-amber-500/10 text-amber-400'
+                                  : user.schedule.name.toLowerCase().includes('tarde')
+                                  ? 'bg-sky-500/10 text-sky-400'
+                                  : user.schedule.name.toLowerCase().includes('noche')
+                                  ? 'bg-indigo-500/10 text-indigo-400'
+                                  : 'bg-slate-800 text-slate-300'
+                              }`}>
+                                {user.schedule.name}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-slate-500 italic">Sin turno</span>
+                            )}
+                          </td>
                           <td className="px-6 py-4">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 ${user.isActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}><div className={`w-1.5 h-1.5 rounded-full ${user.isActive ? 'bg-emerald-400' : 'bg-rose-400'}`} />{user.isActive ? 'Activo' : 'Inactivo'}</span>
                           </td>
@@ -365,21 +385,25 @@ export const AdminDashboard: React.FC<AdminProps> = ({ onNavigate }) => {
             <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-950/50 border-b border-slate-800 text-slate-400">
-                  <tr>
-                    <th className="px-6 py-4 font-semibold text-xs uppercase">Nombre</th>
-                    <th className="px-6 py-4 font-semibold text-xs uppercase">Entrada</th>
-                    <th className="px-6 py-4 font-semibold text-xs uppercase">Salida</th>
-                    <th className="px-6 py-4 font-semibold text-xs uppercase">Tolerancia</th>
-                    <th className="px-6 py-4 font-semibold text-xs uppercase text-right">Acciones</th>
-                  </tr>
+                    <tr>
+                      <th className="px-6 py-4 font-semibold text-xs uppercase">Nombre</th>
+                      <th className="px-6 py-4 font-semibold text-xs uppercase">Entrada</th>
+                      <th className="px-6 py-4 font-semibold text-xs uppercase">Salida</th>
+                      <th className="px-6 py-4 font-semibold text-xs uppercase">Tolerancia</th>
+                      <th className="px-6 py-4 font-semibold text-xs uppercase">V. Antes</th>
+                      <th className="px-6 py-4 font-semibold text-xs uppercase">V. Después</th>
+                      <th className="px-6 py-4 font-semibold text-xs uppercase text-right">Acciones</th>
+                    </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/50">
-                  {isLoadingSchedules ? <tr><td colSpan={5} className="py-12 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div></td></tr> : schedules.length === 0 ? <tr><td colSpan={5} className="py-12 text-center text-slate-500">Sin turnos</td></tr> : schedules.map((sch) => (
+                  {isLoadingSchedules ? <tr><td colSpan={7} className="py-12 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div></td></tr> : schedules.length === 0 ? <tr><td colSpan={7} className="py-12 text-center text-slate-500">Sin turnos</td></tr> : schedules.map((sch) => (
                     <tr key={sch.id} className="hover:bg-slate-800/30 transition group">
                       <td className="px-6 py-4 font-medium text-white">{sch.name}</td>
                       <td className="px-6 py-4 font-mono text-emerald-400">{sch.checkInTime}</td>
                       <td className="px-6 py-4 font-mono text-rose-400">{sch.checkOutTime}</td>
                       <td className="px-6 py-4 text-slate-400">{sch.toleranceMinutes} min</td>
+                      <td className="px-6 py-4 text-slate-400">{sch.entryWindowBeforeMinutes} min</td>
+                      <td className="px-6 py-4 text-slate-400">{sch.entryWindowAfterMinutes} min</td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={() => openScheduleModal(sch)} className="p-2 text-slate-400 hover:text-emerald-400 rounded-lg"><Edit3 size={18} /></button>
@@ -405,15 +429,43 @@ export const AdminDashboard: React.FC<AdminProps> = ({ onNavigate }) => {
             </div>
             <form onSubmit={userForm.handleSubmit(onSubmitUser)} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-slate-300 mb-1">Nombres</label><input {...userForm.register('firstName')} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white" /></div>
-                <div><label className="block text-sm text-slate-300 mb-1">Apellidos</label><input {...userForm.register('lastName')} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white" /></div>
+                <div>
+                  <label className="block text-sm text-slate-300 mb-1">Nombres</label>
+                  <input {...userForm.register('firstName')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${userForm.formState.errors.firstName ? 'border-rose-500' : 'border-slate-800'}`} />
+                  {userForm.formState.errors.firstName && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(userForm.formState.errors.firstName.message)}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-300 mb-1">Apellidos</label>
+                  <input {...userForm.register('lastName')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${userForm.formState.errors.lastName ? 'border-rose-500' : 'border-slate-800'}`} />
+                  {userForm.formState.errors.lastName && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(userForm.formState.errors.lastName.message)}</p>}
+                </div>
               </div>
-              <div><label className="block text-sm text-slate-300 mb-1">DNI (8 dígitos)</label><input {...userForm.register('dni')} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white font-mono" maxLength={8} /></div>
-              <div><label className="block text-sm text-slate-300 mb-1">Email</label><input type="email" {...userForm.register('email')} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white" /></div>
-              <div><label className="block text-sm text-slate-300 mb-1">Contraseña</label><input type="password" {...userForm.register('password')} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white" /></div>
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">DNI (8 dígitos)</label>
+                <input {...userForm.register('dni')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white font-mono outline-none transition ${userForm.formState.errors.dni ? 'border-rose-500' : 'border-slate-800'}`} maxLength={8} />
+                {userForm.formState.errors.dni && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(userForm.formState.errors.dni.message)}</p>}
+              </div>
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">Email</label>
+                <input type="email" {...userForm.register('email')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${userForm.formState.errors.email ? 'border-rose-500' : 'border-slate-800'}`} />
+                {userForm.formState.errors.email && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(userForm.formState.errors.email.message)}</p>}
+              </div>
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">Contraseña</label>
+                <input type="password" {...userForm.register('password')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${userForm.formState.errors.password ? 'border-rose-500' : 'border-slate-800'}`} />
+                {userForm.formState.errors.password && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(userForm.formState.errors.password.message)}</p>}
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-slate-300 mb-1">Rol</label><select {...userForm.register('role')} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white"><option value="EMPLOYEE">Empleado</option><option value="HR">RR.HH</option><option value="ADMIN">Admin</option></select></div>
-                <div><label className="block text-sm text-slate-300 mb-1">Turno</label><select {...userForm.register('scheduleId')} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white"><option value="">Ninguno</option>{schedules.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+                <div>
+                  <label className="block text-sm text-slate-300 mb-1">Rol</label>
+                  <select {...userForm.register('role')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${userForm.formState.errors.role ? 'border-rose-500' : 'border-slate-800'}`}><option value="EMPLOYEE">Empleado</option><option value="HR">RR.HH</option><option value="ADMIN">Admin</option></select>
+                  {userForm.formState.errors.role && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(userForm.formState.errors.role.message)}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-300 mb-1">Turno</label>
+                  <select {...userForm.register('scheduleId')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${userForm.formState.errors.scheduleId ? 'border-rose-500' : 'border-slate-800'}`}><option value="">Ninguno</option>{schedules.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
+                  {userForm.formState.errors.scheduleId && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(userForm.formState.errors.scheduleId.message)}</p>}
+                </div>
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button type="button" onClick={() => setShowUserModal(false)} className="px-5 py-2 rounded-xl text-slate-300 hover:bg-slate-800">Cancelar</button>
@@ -433,12 +485,40 @@ export const AdminDashboard: React.FC<AdminProps> = ({ onNavigate }) => {
               <button onClick={() => setShowScheduleModal(false)} className="p-2 text-slate-400 hover:text-white rounded-xl transition"><X size={20} /></button>
             </div>
             <form onSubmit={scheduleForm.handleSubmit(onSubmitSchedule)} className="space-y-4">
-              <div><label className="block text-sm text-slate-300 mb-1">Nombre del Turno</label><input {...scheduleForm.register('name')} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white" placeholder="Ej. Turno Mañana" /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-slate-300 mb-1">Entrada (HH:MM)</label><input type="time" {...scheduleForm.register('checkInTime')} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white" /></div>
-                <div><label className="block text-sm text-slate-300 mb-1">Salida (HH:MM)</label><input type="time" {...scheduleForm.register('checkOutTime')} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white" /></div>
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">Nombre del Turno</label>
+                <input {...scheduleForm.register('name')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${scheduleForm.formState.errors.name ? 'border-rose-500' : 'border-slate-800'}`} placeholder="Ej. Turno Mañana" />
+                {scheduleForm.formState.errors.name && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(scheduleForm.formState.errors.name.message)}</p>}
               </div>
-              <div><label className="block text-sm text-slate-300 mb-1">Tolerancia (minutos)</label><input type="number" {...scheduleForm.register('toleranceMinutes')} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-slate-300 mb-1">Entrada (HH:MM)</label>
+                  <input type="time" {...scheduleForm.register('checkInTime')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${scheduleForm.formState.errors.checkInTime ? 'border-rose-500' : 'border-slate-800'}`} />
+                  {scheduleForm.formState.errors.checkInTime && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(scheduleForm.formState.errors.checkInTime.message)}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-300 mb-1">Salida (HH:MM)</label>
+                  <input type="time" {...scheduleForm.register('checkOutTime')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${scheduleForm.formState.errors.checkOutTime ? 'border-rose-500' : 'border-slate-800'}`} />
+                  {scheduleForm.formState.errors.checkOutTime && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(scheduleForm.formState.errors.checkOutTime.message)}</p>}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">Tolerancia (minutos)</label>
+                <input type="number" {...scheduleForm.register('toleranceMinutes')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${scheduleForm.formState.errors.toleranceMinutes ? 'border-rose-500' : 'border-slate-800'}`} />
+                {scheduleForm.formState.errors.toleranceMinutes && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(scheduleForm.formState.errors.toleranceMinutes.message)}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-slate-300 mb-1">Ventana antes (minutos)</label>
+                  <input type="number" {...scheduleForm.register('entryWindowBeforeMinutes')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${scheduleForm.formState.errors.entryWindowBeforeMinutes ? 'border-rose-500' : 'border-slate-800'}`} />
+                  {scheduleForm.formState.errors.entryWindowBeforeMinutes && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(scheduleForm.formState.errors.entryWindowBeforeMinutes.message)}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-300 mb-1">Ventana después (minutos)</label>
+                  <input type="number" {...scheduleForm.register('entryWindowAfterMinutes')} className={`w-full bg-slate-950 border rounded-xl px-4 py-2 text-white outline-none transition ${scheduleForm.formState.errors.entryWindowAfterMinutes ? 'border-rose-500' : 'border-slate-800'}`} />
+                  {scheduleForm.formState.errors.entryWindowAfterMinutes && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{String(scheduleForm.formState.errors.entryWindowAfterMinutes.message)}</p>}
+                </div>
+              </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button type="button" onClick={() => setShowScheduleModal(false)} className="px-5 py-2 rounded-xl text-slate-300 hover:bg-slate-800">Cancelar</button>
                 <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-xl">Guardar</button>

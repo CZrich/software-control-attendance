@@ -6,6 +6,8 @@ export interface Schedule {
   checkInTime: string;
   checkOutTime: string;
   toleranceMinutes: number;
+  entryWindowBeforeMinutes: number;
+  entryWindowAfterMinutes: number;
 }
 
 export interface User {

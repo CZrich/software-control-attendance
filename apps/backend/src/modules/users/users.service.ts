@@ -14,6 +14,10 @@ export class UsersService {
         lastName: true,
         role: true,
         isActive: true,
+        scheduleId: true,
+        schedule: {
+          select: { id: true, name: true, checkInTime: true, checkOutTime: true, toleranceMinutes: true, entryWindowBeforeMinutes: true, entryWindowAfterMinutes: true },
+        },
         createdAt: true,
       },
     });
@@ -30,6 +34,10 @@ export class UsersService {
         lastName: true,
         role: true,
         isActive: true,
+        scheduleId: true,
+        schedule: {
+          select: { id: true, name: true, checkInTime: true, checkOutTime: true, toleranceMinutes: true, entryWindowBeforeMinutes: true, entryWindowAfterMinutes: true },
+        },
         createdAt: true,
       },
     });
@@ -45,6 +53,7 @@ export class UsersService {
     lastName: string;
     role: 'ADMIN' | 'EMPLOYEE';
     isActive: boolean;
+    scheduleId?: string | null;
   }) {
     const existingDni = await prisma.user.findUnique({ where: { dni: data.dni } });
     if (existingDni) throw new AppError('El DNI ya está registrado', 400);
@@ -61,6 +70,7 @@ export class UsersService {
       lastName: data.lastName,
       role: data.role,
       isActive: data.isActive,
+      scheduleId: data.scheduleId || null,
     };
 
     if (data.password) {
@@ -92,6 +102,7 @@ export class UsersService {
       lastName?: string;
       role?: 'ADMIN' | 'EMPLOYEE';
       isActive?: boolean;
+      scheduleId?: string | null;
     },
   ) {
     const user = await prisma.user.findUnique({ where: { id } });

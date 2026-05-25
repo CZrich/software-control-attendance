@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { LoginResponse } from '../types';
@@ -8,27 +11,32 @@ interface LoginProps {
   onNavigate: (page: 'kiosk' | 'login' | 'admin') => void;
 }
 
+const loginSchema = z.object({
+  email: z.string().min(1, 'Email requerido').email('Email inválido'),
+  password: z.string().min(1, 'Password requerida'),
+});
+
+type LoginForm = z.infer<typeof loginSchema>;
+
 export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
   const { setToken } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [serverError, setServerError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit = async (data: LoginForm) => {
+    setServerError('');
     setLoading(true);
 
     try {
-      const res = await api.post<LoginResponse>('/auth/login', {
-        email,
-        password,
-      });
+      const res = await api.post<LoginResponse>('/auth/login', data);
       setToken(res.data.data.token);
       onNavigate('admin');
     } catch (err: any) {
-      setError(
+      setServerError(
         err.response?.data?.message || 'Error al iniciar sesión',
       );
     } finally {
@@ -58,10 +66,10 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {serverError && (
               <div className="bg-rose-950/50 border border-rose-800 rounded-xl p-3 text-rose-300 text-sm text-center">
-                {error}
+                {serverError}
               </div>
             )}
 
@@ -71,12 +79,11 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
               </label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                {...register('email')}
                 placeholder="admin@attendance.com"
-                required
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-emerald-500 outline-none transition"
+                className={`w-full bg-slate-950 border rounded-xl px-4 py-3 text-white placeholder-slate-600 outline-none transition ${errors.email ? 'border-rose-500' : 'border-slate-800'}`}
               />
+              {errors.email && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{errors.email.message}</p>}
             </div>
 
             <div>
@@ -85,12 +92,11 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
               </label>
               <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                {...register('password')}
                 placeholder="••••••••"
-                required
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-emerald-500 outline-none transition"
+                className={`w-full bg-slate-950 border rounded-xl px-4 py-3 text-white placeholder-slate-600 outline-none transition ${errors.password ? 'border-rose-500' : 'border-slate-800'}`}
               />
+              {errors.password && <p className="text-rose-400 text-xs mt-1 animate-fade-in">{errors.password.message}</p>}
             </div>
 
             <button

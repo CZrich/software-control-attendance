@@ -38,10 +38,19 @@ export class AttendanceService {
         const [schHour, schMin] = user.schedule.checkInTime.split(':').map(Number);
         const schTimeInMinutes = schHour * 60 + schMin;
         const actualTimeInMinutes = now.getHours() * 60 + now.getMinutes();
-        
-        const limitTime = schTimeInMinutes + user.schedule.toleranceMinutes;
-        
-        if (actualTimeInMinutes > limitTime) {
+
+        const windowStart = schTimeInMinutes - user.schedule.entryWindowBeforeMinutes;
+        const toleranceLimit = schTimeInMinutes + user.schedule.toleranceMinutes;
+        const windowEnd = toleranceLimit + user.schedule.entryWindowAfterMinutes;
+
+        if (actualTimeInMinutes < windowStart || actualTimeInMinutes > windowEnd) {
+          throw new AppError(
+            'Usted no se encuentra dentro del horario permitido para registrar asistencia.\nComuníquese con RR.HH o el administrador.',
+            400
+          );
+        }
+
+        if (actualTimeInMinutes > toleranceLimit) {
           isLate = true;
           minutesLate = actualTimeInMinutes - schTimeInMinutes;
         }

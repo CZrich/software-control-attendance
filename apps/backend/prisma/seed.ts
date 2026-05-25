@@ -19,6 +19,8 @@ async function main() {
         checkInTime: '08:00',
         checkOutTime: '17:00',
         toleranceMinutes: 10,
+        entryWindowBeforeMinutes: 60,
+        entryWindowAfterMinutes: 120,
       }
     });
     console.log('Turno por defecto creado.');

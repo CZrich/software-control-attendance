@@ -5,4 +5,6 @@ export const scheduleSchema = z.object({
   checkInTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato HH:MM requerido'),
   checkOutTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato HH:MM requerido'),
   toleranceMinutes: z.number().int().min(0, 'Debe ser mayor o igual a 0'),
+  entryWindowBeforeMinutes: z.number().int().min(0, 'Debe ser mayor o igual a 0').default(60),
+  entryWindowAfterMinutes: z.number().int().min(0, 'Debe ser mayor o igual a 0').default(120),
 });

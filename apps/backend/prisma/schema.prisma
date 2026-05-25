@@ -41,13 +41,15 @@ model User {
 }
 
 model Schedule {
-  id               String   @id @default(uuid())
-  name             String
-  checkInTime      String   // e.g. '08:00'
-  checkOutTime     String   // e.g. '17:00'
-  toleranceMinutes Int      @default(0)
-  createdAt        DateTime @default(now())
-  users            User[]
+  id                       String   @id @default(uuid())
+  name                     String
+  checkInTime              String   // e.g. '08:00'
+  checkOutTime             String   // e.g. '17:00'
+  toleranceMinutes         Int      @default(0)
+  entryWindowBeforeMinutes Int      @default(60)
+  entryWindowAfterMinutes  Int      @default(120)
+  createdAt                DateTime @default(now())
+  users                    User[]
 }
 
 model AttendanceRecord {
